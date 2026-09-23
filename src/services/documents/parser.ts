@@ -37,22 +37,37 @@ async function extractTxt(buffer: Buffer): Promise<ExtractedDocument> {
 
 async function extractPdf(buffer: Buffer): Promise<ExtractedDocument> {
   // Dynamic import keeps cold-start fast for non-PDF paths.
-  const pdfParse = (await import("pdf-parse")).default;
+  // pdf-parse v2 uses a class-based API:
+  //   const parser = new PDFParse({ data: buffer })
+  //   const result = await parser.getText()
+  //   result.text — full extracted text
+  //   result.total — total page count
+  const pdfParseModule = await import("pdf-parse");
+  const PDFParse = (pdfParseModule as { PDFParse?: unknown }).PDFParse;
+  if (!PDFParse || typeof PDFParse !== "function") {
+    console.error("[parser] pdf-parse v2 API not found. Module exports:", Object.keys(pdfParseModule));
+    throw Errors.internal();
+  }
   try {
-    const result = await pdfParse(buffer);
-    if (!result.text || result.text.trim().length === 0) {
+    const parser = new (PDFParse as new (config: { data: Buffer }) => {
+      getText(): Promise<{ text: string; total: number; pages: { text: string; num: number }[] }>;
+    })({ data: buffer });
+    const result = await parser.getText();
+    const text = result.text ?? "";
+    if (text.trim().length === 0) {
       // Could be a scanned PDF (no text layer). Surface honest message.
       throw Errors.validation(
         "No selectable text was found in this PDF. It may be a scanned image; OCR is not supported.",
       );
     }
     return {
-      text: result.text,
-      pageCount: result.npages ?? null,
-      language: detectLanguage(result.text),
+      text,
+      pageCount: typeof result.total === "number" ? result.total : null,
+      language: detectLanguage(text),
     };
   } catch (err) {
     if (err instanceof Error && err.name === "AppError") throw err;
+    console.error("[parser] PDF extraction failed:", err);
     throw Errors.corruptFile();
   }
 }

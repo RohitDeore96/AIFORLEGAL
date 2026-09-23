@@ -52,7 +52,11 @@ export async function POST(req: NextRequest) {
     const checksum = createHash("sha256").update(buffer).digest("hex");
     const storedName = `${userId}/${checksum}${path.extname(validated.name) || ".bin"}`;
     const storage = getDocumentStorage();
-    await storage.save(storedName, validated.buffer);
+    // Best-effort: persist the raw file. On Vercel serverless this writes to
+    // /tmp (ephemeral). If storage fails, we continue anyway because the
+    // extracted text is cached in the database (Document.textContent) and
+    // that's what the AI features actually use.
+    const storagePath = await storage.save(storedName, validated.buffer);
 
     // Extract text + chunk
     const extracted = await extractText(validated.buffer, validated.mimeType);
@@ -66,7 +70,7 @@ export async function POST(req: NextRequest) {
         originalName: validated.name,
         mimeType: validated.mimeType,
         sizeBytes: validated.size,
-        storagePath: storedName,
+        storagePath: storagePath || storedName,
         textContent: extracted.text,
         pageCount: extracted.pageCount,
         wordCount,
