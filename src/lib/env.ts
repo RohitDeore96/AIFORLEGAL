@@ -1,8 +1,30 @@
 /**
  * Typed environment access — single source of truth.
  * Throws on missing required vars at startup so failures are loud.
+ *
+ * NOTE: Vercel sometimes sets env vars to empty string "" instead of
+ * leaving them undefined. zod's `z.coerce.number()` parses "" as 0
+ * (because Number("") === 0), which would set MAX_UPLOAD_BYTES=0 and
+ * break uploads. We use `emptyStringToUndefined` to convert "" to
+ * undefined so zod's `.default()` kicks in correctly.
  */
 import { z } from "zod";
+
+/**
+ * Preprocessor: convert empty string to undefined so zod's `.default()`
+ * applies. Handles the Vercel empty-string env var issue.
+ */
+const emptyStringToUndefined = z.preprocess((val) => {
+  if (typeof val === "string" && val.trim() === "") return undefined;
+  return val;
+}, z.unknown());
+
+/**
+ * Number coercion that treats empty/whitespace strings as undefined
+ * (falls back to default) instead of converting to 0.
+ */
+const optionalNumber = (defaultValue: number) =>
+  emptyStringToUndefined.pipe(z.coerce.number().default(defaultValue));
 
 const envSchema = z.object({
   // Database
@@ -32,13 +54,13 @@ const envSchema = z.object({
   STORAGE_DIR: z.string().default("./.storage"),
 
   // Upload limits
-  MAX_UPLOAD_BYTES: z.coerce.number().default(10 * 1024 * 1024), // 10MB
+  MAX_UPLOAD_BYTES: optionalNumber(10 * 1024 * 1024), // 10MB
   ALLOWED_MIME_TYPES: z
     .string()
     .default("application/pdf,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
 
   // Rate limit (per-IP per-minute) for AI endpoints
-  AI_RATE_LIMIT_PER_MIN: z.coerce.number().default(10),
+  AI_RATE_LIMIT_PER_MIN: optionalNumber(10),
 
   NODE_ENV: z
     .enum(["development", "production", "test"])
