@@ -34,17 +34,20 @@ export const authOptions: NextAuthOptions = {
         const email = credentials.email.toLowerCase().trim();
 
         const user = await db.user.findUnique({ where: { email } });
-        // Sign-up flow: if no user, create one (DEMO ONLY — in production, separate sign-up).
-        // For security, gate this behind an env flag.
+        // Sign-up flow: if no user exists, create one.
+        // This is a demo / hackathon app, so sign-up is enabled by default.
+        // To disable public sign-up in a real production deployment, set
+        // ALLOW_SIGNUP_VIA_SIGNIN=false in your environment variables.
+        const allowSignup = process.env.ALLOW_SIGNUP_VIA_SIGNIN !== "false";
         if (!user) {
-          if (env.NODE_ENV === "production" && !process.env.ALLOW_SIGNUP_VIA_SIGNIN) {
+          if (!allowSignup) {
             return null;
           }
           const passwordHash = await bcrypt.hash(credentials.password, 12);
           const created = await db.user.create({
             data: {
               email,
-              name: email.split("@")[0],
+              name: (credentials.name as string | undefined)?.trim() || email.split("@")[0],
               passwordHash,
             },
           });

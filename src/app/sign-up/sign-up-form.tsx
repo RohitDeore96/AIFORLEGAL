@@ -45,7 +45,13 @@ export function SignUpForm() {
       name: values.name,
     });
     if (!res || res.error) {
-      setServerError("Could not create account. Please try again.");
+      // NextAuth returns "CredentialsSignlink" with code "credentials" for any
+      // authorize() failure. We can't distinguish "user exists wrong password"
+      // from "sign-up blocked" from "DB not initialized" without server logs.
+      // Show a helpful message that covers the common cases.
+      setServerError(
+        "Could not create account. This is usually because: (1) the database hasn't been initialized — run `npx prisma db push` with your DATABASE_URL; (2) the env var ALLOW_SIGNUP_VIA_SIGNIN is set to 'false'; or (3) you already have an account with this email — try signing in instead."
+      );
       return;
     }
     router.push("/dashboard");
