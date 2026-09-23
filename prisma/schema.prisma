@@ -138,6 +138,7 @@ model Comparison {
   createdAt  DateTime @default(now())
 
   @@index([userId])
+  @@index([userId, docAId, docBId]) // used for cache lookup
 }
 
 enum DocumentStatus {
