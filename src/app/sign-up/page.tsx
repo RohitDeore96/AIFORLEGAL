@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SignUpForm } from "./sign-up-form";
 
 // Force this route to be dynamic. NextAuth v4 reads NEXTAUTH_URL at module
@@ -6,5 +7,9 @@ import { SignUpForm } from "./sign-up-form";
 export const dynamic = "force-dynamic";
 
 export default function SignUpPage() {
-  return <SignUpForm />;
+  return (
+    <Suspense fallback={null}>
+      <SignUpForm />
+    </Suspense>
+  );
 }
