@@ -72,8 +72,13 @@ export function validateUpload(file: {
     throw Errors.emptyFile();
   }
 
-  // 3. Filename sanity
+  // 3. Filename sanity — reject null bytes, path traversal, oversized names
   if (name.length === 0 || name.length > 255 || name.includes("\0")) {
+    throw Errors.validation("Invalid filename");
+  }
+  // Path traversal defense: reject filenames containing ../ or ..\ or
+  // absolute paths (could escape the storage directory)
+  if (name.includes("../") || name.includes("..\\") || name.includes("..") || name.startsWith("/")) {
     throw Errors.validation("Invalid filename");
   }
 

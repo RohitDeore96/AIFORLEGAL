@@ -8,11 +8,11 @@ import { sanitizeDocumentText } from "@/services/documents/sanitizer";
 import { nullableArray } from "../schemas/helpers";
 
 export const SummarySchema = z.object({
-  documentType: z.string().nullable(),
-  purpose: z.string().nullable(),
+  documentType: z.union([z.string(), z.null()]).transform((v) => v ?? null),
+  purpose: z.union([z.string(), z.null()]).transform((v) => v ?? null),
   parties: nullableArray(z.string()),
-  effectiveDate: z.string().nullable(),
-  term: z.string().nullable(),
+  effectiveDate: z.union([z.string(), z.number(), z.null()]).transform((v) => (v === null ? null : String(v))),
+  term: z.union([z.string(), z.number(), z.null()]).transform((v) => (v === null ? null : String(v))),
   keyObligations: nullableArray(z.string()),
   importantDates: nullableArray(
     z.object({
@@ -21,8 +21,8 @@ export const SummarySchema = z.object({
       context: z.string().optional(),
     }),
   ),
-  paymentProvisions: z.string().nullable(),
-  terminationProvisions: z.string().nullable(),
+  paymentProvisions: z.union([z.string(), z.null()]).transform((v) => v ?? null),
+  terminationProvisions: z.union([z.string(), z.null()]).transform((v) => v ?? null),
   majorResponsibilities: nullableArray(z.string()),
   plainLanguageSummary: z.string(),
 });

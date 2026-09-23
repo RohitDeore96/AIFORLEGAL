@@ -8,6 +8,7 @@ import { ok, fail } from "@/lib/api-response";
 import { requireUserId } from "@/services/auth/session";
 import { getDocumentStorage } from "@/services/storage/document-storage";
 import { Errors } from "@/lib/errors";
+import { invalidateCachePrefix } from "@/lib/cache";
 
 export const runtime = "nodejs";
 
@@ -52,6 +53,9 @@ export async function DELETE(
     if (!doc || doc.userId !== userId) throw Errors.notFound("Document");
 
     await db.document.delete({ where: { id } });
+
+    // Invalidate any cached chunks/retrievers for this document
+    invalidateCachePrefix(`retriever:${id}`);
 
     try {
       const storage = getDocumentStorage();

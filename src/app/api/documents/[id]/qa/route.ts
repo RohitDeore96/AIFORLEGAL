@@ -12,6 +12,7 @@ import { aiService, buildRetriever } from "@/services/ai";
 import { chunkDocument } from "@/services/documents/chunker";
 import { Errors } from "@/lib/errors";
 import { rateLimit } from "@/lib/rate-limit";
+import { cachedCompute, invalidateCachePrefix } from "@/lib/cache";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -42,9 +43,19 @@ export async function POST(
     }
     const { question } = parsed.data;
 
-    // Chunk document + retrieve
-    const chunks = chunkDocument(doc.textContent, undefined, { page: doc.pageCount ?? undefined });
-    const retriever = buildRetriever(chunks);
+    // Cache chunks + retriever per document (5-min TTL).
+    // This avoids re-chunking + re-indexing on every Q&A request —
+    // a significant CPU saving for multi-question sessions.
+    const retriever = await cachedCompute(
+      `retriever:${id}`,
+      async () => {
+        const chunks = chunkDocument(doc.textContent, undefined, {
+          page: doc.pageCount ?? undefined,
+        });
+        return buildRetriever(chunks);
+      },
+    );
+
     const retrieved = retriever.retrieve(question, 4, 0.05);
 
     if (retrieved.length === 0) {
