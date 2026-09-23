@@ -114,6 +114,59 @@ describe("validateUpload", () => {
       }),
     ).toThrow();
   });
+
+  it("accepts PDF when MIME is empty but extension is .pdf", () => {
+    // Browser sometimes sends empty Content-Type. Validator should infer from extension.
+    const buffer = Buffer.concat([
+      Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34]),
+      Buffer.from("...rest of pdf..."),
+    ]);
+    const result = validateUpload({
+      name: "contract.pdf",
+      mimeType: "",
+      size: buffer.length,
+      buffer,
+    });
+    expect(result.mimeType).toBe("application/pdf");
+  });
+
+  it("accepts PDF when MIME is application/octet-stream but extension is .pdf", () => {
+    // Some browsers send generic octet-stream for PDFs.
+    const buffer = Buffer.concat([
+      Buffer.from([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34]),
+      Buffer.from("...rest of pdf..."),
+    ]);
+    const result = validateUpload({
+      name: "contract.pdf",
+      mimeType: "application/octet-stream",
+      size: buffer.length,
+      buffer,
+    });
+    expect(result.mimeType).toBe("application/pdf");
+  });
+
+  it("accepts TXT when MIME is empty but extension is .txt", () => {
+    const buffer = Buffer.from("This is a contract.");
+    const result = validateUpload({
+      name: "contract.txt",
+      mimeType: "",
+      size: buffer.length,
+      buffer,
+    });
+    expect(result.mimeType).toBe("text/plain");
+  });
+
+  it("rejects files with no extension and no recognizable MIME", () => {
+    const buffer = Buffer.from("some random data here");
+    expect(() =>
+      validateUpload({
+        name: "noextension",
+        mimeType: "",
+        size: buffer.length,
+        buffer,
+      }),
+    ).toThrow();
+  });
 });
 
 describe("FRIENDLY_EXTENSIONS", () => {

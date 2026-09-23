@@ -14,7 +14,6 @@ import { validateUpload } from "@/services/documents/validator";
 import { extractText } from "@/services/documents/parser";
 import { chunkDocument } from "@/services/documents/chunker";
 import { getDocumentStorage } from "@/services/storage/document-storage";
-import { env } from "@/lib/env";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { rateLimit } from "@/lib/rate-limit";
@@ -43,7 +42,9 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const validated = validateUpload({
       name: file.name,
-      mimeType: file.type || inferMime(file.name),
+      // Pass file.type as-is. If it's empty or unrecognized, the validator
+      // falls back to inferring from the file extension.
+      mimeType: file.type,
       size: file.size,
       buffer,
     });
@@ -122,14 +123,3 @@ export async function GET() {
     return fail(err);
   }
 }
-
-function inferMime(name: string): string {
-  const ext = path.extname(name).toLowerCase();
-  if (ext === ".pdf") return "application/pdf";
-  if (ext === ".txt") return "text/plain";
-  if (ext === ".docx") return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-  return "application/octet-stream";
-}
-
-// Mark env import as used (referenced inside inferMime in future)
-void env;
