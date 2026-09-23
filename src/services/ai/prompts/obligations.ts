@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { BASE_LEGAL_SYSTEM_PROMPT } from "./base";
 import { sanitizeDocumentText } from "@/services/documents/sanitizer";
+import { nullableArray } from "../schemas/helpers";
 
-export const ObligationsSchema = z.array(
+export const ObligationsSchema = nullableArray(
   z.object({
     party: z.string(),
     obligation: z.string(),
-    deadline: z.string().nullable(),
-    condition: z.string().nullable(),
+    deadline: z.union([z.string(), z.null()]),
+    condition: z.union([z.string(), z.null()]),
     source: z.string(),
   }),
 );

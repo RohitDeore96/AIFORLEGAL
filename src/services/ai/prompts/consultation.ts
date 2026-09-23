@@ -1,15 +1,16 @@
 import { z } from "zod";
 import { BASE_LEGAL_SYSTEM_PROMPT } from "./base";
 import { sanitizeDocumentText } from "@/services/documents/sanitizer";
+import { nullableArray } from "../schemas/helpers";
 
 export const ConsultationSchema = z.object({
   documentSummary: z.string(),
-  keyClauses: z.array(z.string()).default([]),
-  unclearProvisions: z.array(z.string()).default([]),
-  importantDates: z.array(z.string()).default([]),
-  missingInformation: z.array(z.string()).default([]),
-  questionsForLawyer: z.array(z.string()).default([]),
-  documentsToBring: z.array(z.string()).default([]),
+  keyClauses: nullableArray(z.string()),
+  unclearProvisions: nullableArray(z.string()),
+  importantDates: nullableArray(z.string()),
+  missingInformation: nullableArray(z.string()),
+  questionsForLawyer: nullableArray(z.string()),
+  documentsToBring: nullableArray(z.string()),
 });
 
 export function buildConsultationSystemPrompt(): string {

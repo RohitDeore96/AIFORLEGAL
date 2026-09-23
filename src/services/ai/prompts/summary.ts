@@ -5,26 +5,25 @@
 import { z } from "zod";
 import { BASE_LEGAL_SYSTEM_PROMPT } from "./base";
 import { sanitizeDocumentText } from "@/services/documents/sanitizer";
+import { nullableArray } from "../schemas/helpers";
 
 export const SummarySchema = z.object({
   documentType: z.string().nullable(),
   purpose: z.string().nullable(),
-  parties: z.array(z.string()).default([]),
+  parties: nullableArray(z.string()),
   effectiveDate: z.string().nullable(),
   term: z.string().nullable(),
-  keyObligations: z.array(z.string()).default([]),
-  importantDates: z
-    .array(
-      z.object({
-        label: z.string(),
-        date: z.string(),
-        context: z.string().optional(),
-      }),
-    )
-    .default([]),
+  keyObligations: nullableArray(z.string()),
+  importantDates: nullableArray(
+    z.object({
+      label: z.string(),
+      date: z.union([z.string(), z.number(), z.null()]).transform((v) => String(v ?? "")),
+      context: z.string().optional(),
+    }),
+  ),
   paymentProvisions: z.string().nullable(),
   terminationProvisions: z.string().nullable(),
-  majorResponsibilities: z.array(z.string()).default([]),
+  majorResponsibilities: nullableArray(z.string()),
   plainLanguageSummary: z.string(),
 });
 export type SummaryOutput = z.infer<typeof SummarySchema>;

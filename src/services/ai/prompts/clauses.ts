@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BASE_LEGAL_SYSTEM_PROMPT } from "./base";
 import { sanitizeDocumentText } from "@/services/documents/sanitizer";
+import { nullableArray } from "../schemas/helpers";
 
 export const CLAUSE_CATEGORIES = [
   "DEFINITIONS", "PAYMENT", "FEES", "RENEWAL", "TERMINATION",
@@ -12,18 +13,18 @@ export const CLAUSE_CATEGORIES = [
 
 export const ClauseSchema = z.object({
   name: z.string(),
-  category: z.enum(CLAUSE_CATEGORIES),
+  category: z.union([z.enum(CLAUSE_CATEGORIES), z.string().transform(() => "OTHER" as const)]),
   plainLanguageExplanation: z.string(),
   sourceLocation: z.object({
-    page: z.number().nullable(),
-    section: z.string().nullable(),
+    page: z.union([z.number(), z.null()]).optional(),
+    section: z.union([z.string(), z.null()]).optional(),
     snippet: z.string(),
   }),
   whyItMatters: z.string(),
-  suggestedQuestions: z.array(z.string()).default([]),
+  suggestedQuestions: nullableArray(z.string()),
 });
 
-export const ClausesSchema = z.array(ClauseSchema);
+export const ClausesSchema = nullableArray(ClauseSchema);
 
 export function buildClausesSystemPrompt(): string {
   return `${BASE_LEGAL_SYSTEM_PROMPT}

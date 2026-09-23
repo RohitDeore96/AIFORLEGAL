@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BASE_LEGAL_SYSTEM_PROMPT } from "./base";
 import { sanitizeDocumentText } from "@/services/documents/sanitizer";
+import { nullableArray } from "../schemas/helpers";
 
 const CLAUSE_CATEGORIES = [
   "DEFINITIONS", "PAYMENT", "FEES", "RENEWAL", "TERMINATION",
@@ -12,17 +13,23 @@ const CLAUSE_CATEGORIES = [
 
 export const ComparisonSchema = z.object({
   summary: z.string(),
-  diffs: z.array(
+  diffs: nullableArray(
     z.object({
-      category: z.enum(CLAUSE_CATEGORIES),
-      change: z.enum(["ADDED", "REMOVED", "MODIFIED"]),
+      category: z.union([
+        z.enum(CLAUSE_CATEGORIES),
+        z.string().transform(() => "OTHER" as const),
+      ]),
+      change: z.union([
+        z.enum(["ADDED", "REMOVED", "MODIFIED"]),
+        z.string().transform(() => "MODIFIED" as const),
+      ]),
       description: z.string(),
-      docALocation: z.string().nullable(),
-      docBLocation: z.string().nullable(),
+      docALocation: z.union([z.string(), z.null()]),
+      docBLocation: z.union([z.string(), z.null()]),
       whyItMatters: z.string(),
-      suggestedQuestions: z.array(z.string()).default([]),
+      suggestedQuestions: nullableArray(z.string()),
     }),
-  ).default([]),
+  ),
   overallRiskNote: z.string(),
 });
 

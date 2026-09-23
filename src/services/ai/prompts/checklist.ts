@@ -1,18 +1,15 @@
 import { z } from "zod";
 import { BASE_LEGAL_SYSTEM_PROMPT } from "./base";
 import { sanitizeDocumentText } from "@/services/documents/sanitizer";
+import { nullableArray } from "../schemas/helpers";
 
-export const ChecklistSchema = z.array(
+export const ChecklistSchema = nullableArray(
   z.object({
     label: z.string(),
     rationale: z.string(),
-    category: z.enum([
-      "PAYMENT",
-      "TERMINATION",
-      "OBLIGATIONS",
-      "RISK",
-      "PROCESS",
-      "PROFESSIONAL_HELP",
+    category: z.union([
+      z.enum(["PAYMENT", "TERMINATION", "OBLIGATIONS", "RISK", "PROCESS", "PROFESSIONAL_HELP"]),
+      z.string().transform(() => "PROCESS" as const),
     ]),
   }),
 );

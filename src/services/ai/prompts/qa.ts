@@ -2,21 +2,23 @@ import { z } from "zod";
 import { BASE_LEGAL_SYSTEM_PROMPT } from "./base";
 import { wrapChunkForRetrieval } from "@/services/documents/sanitizer";
 import type { DocumentChunk } from "@/types";
+import { nullableArray } from "../schemas/helpers";
 
 export const QaSchema = z.object({
   answer: z.string(),
-  citations: z
-    .array(
-      z.object({
-        chunkId: z.string(),
-        snippet: z.string(),
-        page: z.number().nullable(),
-        section: z.string().nullable(),
-      }),
-    )
-    .default([]),
-  confidence: z.enum(["high", "medium", "low", "insufficient"]),
-  followUpQuestions: z.array(z.string()).default([]),
+  citations: nullableArray(
+    z.object({
+      chunkId: z.string(),
+      snippet: z.string(),
+      page: z.union([z.number(), z.null()]).optional(),
+      section: z.union([z.string(), z.null()]).optional(),
+    }),
+  ),
+  confidence: z.union([
+    z.enum(["high", "medium", "low", "insufficient"]),
+    z.string().transform(() => "low" as const),
+  ]),
+  followUpQuestions: nullableArray(z.string()),
 });
 export type QaOutput = z.infer<typeof QaSchema>;
 

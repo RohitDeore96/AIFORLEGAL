@@ -112,7 +112,7 @@ describe("Zod schemas reject invalid AI output", () => {
     expect(result.success).toBe(false);
   });
 
-  it("ClausesSchema rejects an item with invalid category", () => {
+  it("ClausesSchema coerces invalid category to OTHER (lenient)", () => {
     const result = ClausesSchema.safeParse([
       {
         name: "Test",
@@ -123,17 +123,23 @@ describe("Zod schemas reject invalid AI output", () => {
         suggestedQuestions: [],
       },
     ]);
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data[0].category).toBe("OTHER");
+    }
   });
 
-  it("QaSchema rejects invalid confidence", () => {
+  it("QaSchema coerces invalid confidence to 'low' (lenient)", () => {
     const result = QaSchema.safeParse({
       answer: "...",
       citations: [],
       confidence: "very_confident",
       followUpQuestions: [],
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.confidence).toBe("low");
+    }
   });
 
   it("ObligationsSchema rejects an obligation without source", () => {
@@ -141,5 +147,49 @@ describe("Zod schemas reject invalid AI output", () => {
       { party: "A", obligation: "Do X", deadline: null, condition: null },
     ]);
     expect(result.success).toBe(false);
+  });
+
+  it("SummarySchema accepts null for array fields (Gemini often returns null)", () => {
+    const result = SummarySchema.safeParse({
+      documentType: "Contract",
+      purpose: null,
+      parties: null,           // Gemini sometimes returns null instead of []
+      effectiveDate: null,
+      term: null,
+      keyObligations: null,
+      importantDates: null,
+      paymentProvisions: null,
+      terminationProvisions: null,
+      majorResponsibilities: null,
+      plainLanguageSummary: "A summary.",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.parties).toEqual([]);
+      expect(result.data.keyObligations).toEqual([]);
+      expect(result.data.importantDates).toEqual([]);
+    }
+  });
+
+  it("ClausesSchema accepts null (Gemini sometimes returns null instead of [])", () => {
+    const result = ClausesSchema.safeParse(null);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual([]);
+    }
+  });
+
+  it("QaSchema accepts null for citations array", () => {
+    const result = QaSchema.safeParse({
+      answer: "Test answer",
+      citations: null,
+      confidence: "high",
+      followUpQuestions: null,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.citations).toEqual([]);
+      expect(result.data.followUpQuestions).toEqual([]);
+    }
   });
 });
