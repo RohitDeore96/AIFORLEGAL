@@ -1,25 +1,26 @@
 // AIFORLEGAL — Prisma schema
-// Provider-agnostic data model. Works with SQLite (local dev) and Postgres (Vercel).
+// Production uses PostgreSQL (Neon / Vercel Postgres).
+// For local dev, point DATABASE_URL at a local Postgres instance OR a Neon dev branch.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  name          String?
-  passwordHash  String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  documents     Document[]
-  sessions      Session[]
-  accounts      Account[]
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String?
+  passwordHash String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  documents    Document[]
+  sessions     Session[]
+  accounts     Account[]
 }
 
 model Account {
@@ -30,7 +31,7 @@ model Account {
   providerAccountId String
   refresh_token     String?
   access_token      String?
-  expires_at       Int?
+  expires_at        Int?
   token_type        String?
   scope             String?
   id_token          String?
@@ -60,26 +61,26 @@ model VerificationToken {
 }
 
 model Document {
-  id            String         @id @default(cuid())
-  userId        String
-  filename      String
-  originalName  String
-  mimeType      String
-  sizeBytes     Int
-  storagePath   String
-  textContent   String         // extracted text (cached)
-  pageCount     Int?
-  wordCount     Int?
-  language      String?
-  checksum      String         // sha256, for dedupe detection
-  status        DocumentStatus  @default(PENDING)
+  id             String          @id @default(cuid())
+  userId         String
+  filename       String
+  originalName   String
+  mimeType       String
+  sizeBytes      Int
+  storagePath    String
+  textContent    String // extracted text (cached)
+  pageCount      Int?
+  wordCount      Int?
+  language       String?
+  checksum       String // sha256, for dedupe detection
+  status         DocumentStatus  @default(PENDING)
   errorMessage   String?
-  metadata      String?         // JSON-encoded DocumentMetadata
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  analyses      Analysis[]
-  qaMessages    QaMessage[]
+  metadata       String? // JSON-encoded DocumentMetadata
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analyses       Analysis[]
+  qaMessages     QaMessage[]
   checklistItems ChecklistItem[]
 
   @@index([userId])
@@ -88,53 +89,53 @@ model Document {
 }
 
 model Analysis {
-  id            String         @id @default(cuid())
-  documentId    String
-  type          AnalysisType
-  resultJson    String         // structured output (validated by zod)
-  modelUsed     String
-  tokenUsage    Int?
-  durationMs    Int?
-  createdAt     DateTime       @default(now())
-  document      Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  id         String       @id @default(cuid())
+  documentId String
+  type       AnalysisType
+  resultJson String // structured output (validated by zod)
+  modelUsed  String
+  tokenUsage Int?
+  durationMs Int?
+  createdAt  DateTime     @default(now())
+  document   Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@index([documentId, type])
 }
 
 model QaMessage {
-  id          String   @id @default(cuid())
-  documentId  String
-  role        String  // "user" | "assistant"
-  content     String
-  citations   String? // JSON: array of {chunkId, snippet}
-  createdAt   DateTime @default(now())
-  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  documentId String
+  role       String // "user" | "assistant"
+  content    String
+  citations  String? // JSON: array of {chunkId, snippet}
+  createdAt  DateTime @default(now())
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@index([documentId, createdAt])
 }
 
 model ChecklistItem {
-  id          String   @id @default(cuid())
-  documentId  String
-  label       String
-  rationale   String?
-  completed   Boolean  @default(false)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  documentId String
+  label      String
+  rationale  String?
+  completed  Boolean  @default(false)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@index([documentId])
 }
 
 model Comparison {
-  id           String   @id @default(cuid())
-  userId       String
-  docAId       String
-  docBId       String
-  resultJson   String   // structured comparison output
-  modelUsed    String
-  createdAt    DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  docAId     String
+  docBId     String
+  resultJson String // structured comparison output
+  modelUsed  String
+  createdAt  DateTime @default(now())
 
   @@index([userId])
 }

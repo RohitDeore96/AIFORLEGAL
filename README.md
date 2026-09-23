@@ -337,7 +337,7 @@ See [`.env.example`](.env.example) for the full list. Key variables:
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `DATABASE_URL` | Yes | `file:./dev.db` | Prisma database URL (SQLite locally; Postgres URL on Vercel) |
+| `DATABASE_URL` | Yes | `file:./dev.db` | Prisma database URL. **Production uses PostgreSQL** (Neon / Vercel Postgres) — schema is configured for `postgresql`. For local dev, point at a local Postgres instance or a Neon dev branch. |
 | `NEXTAUTH_SECRET` | Yes | — | Random string used to sign JWTs. Generate with `openssl rand -base64 32` |
 | `NEXTAUTH_URL` | Yes | `http://localhost:3000` | Public URL of the app |
 | `AI_PROVIDER` | No | auto | One of `gemini`, `zai`, `mock`. Defaults to `gemini` if `GOOGLE_GEMINI_API_KEY` is set, else `mock` |

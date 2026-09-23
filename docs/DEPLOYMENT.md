@@ -36,19 +36,9 @@ Follow [`PUSH_INSTRUCTIONS.md`](./PUSH_INSTRUCTIONS.md) to push your local code 
 
 ### 5. Set up Prisma for Postgres
 
-In your local repo, edit `prisma/schema.prisma`:
+✅ **Already done.** The committed `prisma/schema.prisma` uses `provider = "postgresql"` — no edit needed.
 
-```diff
- datasource db {
--  provider = "sqlite"
-+  provider = "postgresql"
-   url      = env("DATABASE_URL")
- }
-```
-
-Commit and push this change.
-
-> **Note**: SQLite works for local dev. Postgres is needed for Vercel because serverless functions are stateless — they can't share a SQLite file.
+> **Note**: SQLite doesn't work on Vercel because serverless functions are stateless — they can't share a SQLite file. Postgres (Neon) is the production database.
 
 ### 6. Configure environment variables on Vercel
 
